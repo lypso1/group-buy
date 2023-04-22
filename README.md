@@ -36,7 +36,7 @@ To follow along with this tutorial, you should have a basic understanding of:
 ## Tech Stack
 We will use the following tools and languages in this tutorial
 - [Hardhat](https://hardhat.org/)
-- [Web3modal](https://web3modal.com/)
+- [Ethers.js](https://docs.ethers.org/v5/)
 - [Vercel](https://vercel.com/)
 
 ## Learning Outcomes
@@ -506,9 +506,463 @@ To deploy, open up a terminal pointing at hardhat directory and execute this com
   npx hardhat run scripts/deploy.js --network alfajores
 ```
 
-Copy the contract address displayed in the terminal as we would need it in the frontend to interact with our smart contracts
+Copy and save the contract address displayed in the terminal as we would need it in the frontend to interact with our smart contracts
 
 ## Building the Frontend
+To develop the frontend of the website of our project, we will be using React. React is a javascript framework which is used to make websites. You first need to create a new react app. Your folder structure should look something like this:
+```js
+  - GroupBuy
+     - hardhat
+     - frontend
+```
+To create the `frontend` folder, make sure the terminal points to the `GroupBuy` folder and type:
+```bash
+  npx create-react-app frontend
+```
+Now to run the app, execute these commands in the terminal:
+```bash
+  cd frontend
+  npm start
+```
+
+Now let's install [ethers.js](https://docs.ethers.org/v5/) library. Ethers.js library aims to be a complete and compact library for interacting with the Ethereum Blockchain and its ecosystem.
+
+> Note : We install v5 specifically since the new v6 has breaking changes to the code.
+
+```bash
+npm install ethers@5
+```
+Now go to App.css file in the src folder and replace all the contents of this file with the following code, this would add some styling to your dapp.
+```css
+* {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6rem;
+  min-height: 100vh;
+  background-color: whitesmoke;
+}
+
+h1 {
+  text-align: center;
+  text-decoration: underline;
+}
+nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: grey;
+  padding: 5px 5%;
+}
+nav button {
+  text-transform: capitalize;
+  border: none;
+  background-color: #282928;
+  color: #f7f7f7;
+  padding: 10px 15px;
+  cursor: pointer;
+}
+
+.allGroupBuys {
+  font-family: var(--font-mono);
+  color: black;
+  padding: 20px 5%;
+
+}
+
+
+.createGroupBuy {
+  margin: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.createGroupBuy > div {
+  display: flex;
+  gap: 5px 0px;
+  flex-direction: column;
+}
+.createGroupBuy > div > input {
+  border: thin solid #5e5d5d;
+  width: 350px;
+  background: none;
+  height: 40px;
+  padding-left: 10px;
+  font-size: 1rem
+}
+
+
+
+
+.createGroupBuyBtn {
+  margin: 20px;
+  padding: 10px 15px;
+  color: white;
+  background-color: #282928;
+  border: none;
+  cursor: pointer;
+}
+
+.backBtn {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: black;
+  color: white;
+  border: none;
+}
+
+
+.seeMoreBtn {
+  margin: 10px;
+  padding: 10px;
+  background-color: green;
+  color: white;
+}
+
+.placeOrderBtn {
+  padding: 10px;
+  margin-top: 10px;
+  background-color: orange;
+  color: white;
+  border: none;
+}
+
+.withdrawFundsBtn {
+  padding: 10px;
+  margin-top: 10px;
+  margin-left: 15px;
+  background-color: red;
+  color: white;
+  border: none;
+}
+
+.paragraphText {
+  font-family: var(--font-mono);
+  margin: 5px;
+  color: black;
+}
+
+.hyperlinkText {
+  font-family: var(--font-mono);
+  margin: 5px;
+  color: blue;
+  text-decoration: underline;
+}
+
+.modal {
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  background-color: rgba(0, 0, 0, 0.4); /* Semi-transparent black background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Modal Content */
+.modalContent {
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #888;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 5px 8px 0 rgba(0, 0, 0, 0.2);
+  background-color: #fefefe;
+}
+
+.modalText {
+  margin-left: 14px;
+  font-size: 24px;
+}
+
+.code {
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(25%, auto));
+  width: var(--max-width);
+  max-width: 100%;
+}
+
+.card {
+  padding: 1rem 1.2rem;
+  border-radius: var(--border-radius);
+  background: rgba(var(--card-rgb), 0);
+  border: 1px solid rgba(var(--card-border-rgb), 0);
+  transition: background 200ms, border 200ms;
+}
+
+.card span {
+  display: inline-block;
+  transition: transform 200ms;
+}
+
+.card h2 {
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+}
+
+.card p {
+  margin: 0;
+  opacity: 0.6;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  max-width: 30ch;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  padding: 4rem 0;
+}
+
+.center::before {
+  background: var(--secondary-glow);
+  border-radius: 50%;
+  width: 480px;
+  height: 360px;
+  margin-left: -400px;
+}
+
+.center::after {
+  background: var(--primary-glow);
+  width: 240px;
+  height: 180px;
+  z-index: -1;
+}
+
+.center::before,
+.center::after {
+  content: '';
+  left: 50%;
+  position: absolute;
+  filter: blur(45px);
+  transform: translateZ(0);
+}
+
+.logo,
+.thirteen {
+  position: relative;
+}
+
+.thirteen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 75px;
+  height: 75px;
+  padding: 25px 10px;
+  margin-left: 16px;
+  transform: translateZ(0);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: 0px 2px 8px -1px #0000001a;
+}
+
+.thirteen::before,
+.thirteen::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+}
+
+/* Conic Gradient Animation */
+.thirteen::before {
+  animation: 6s rotate linear infinite;
+  width: 200%;
+  height: 200%;
+  background: var(--tile-border);
+}
+
+/* Inner Square */
+.thirteen::after {
+  inset: 0;
+  padding: 1px;
+  border-radius: var(--border-radius);
+  background: linear-gradient(
+    to bottom right,
+    rgba(var(--tile-start-rgb), 1),
+    rgba(var(--tile-end-rgb), 1)
+  );
+  background-clip: content-box;
+}
+
+/* Enable hover only on non-touch devices */
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    background: rgba(var(--card-rgb), 0.1);
+    border: 1px solid rgba(var(--card-border-rgb), 0.15);
+  }
+
+  .card:hover span {
+    transform: translateX(4px);
+  }
+}
+
+@media (prefers-reduced-motion) {
+  .thirteen::before {
+    animation: none;
+  }
+
+  .card:hover span {
+    transform: none;
+  }
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+  .content {
+    padding: 4rem;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+    margin-bottom: 120px;
+    max-width: 320px;
+    text-align: center;
+  }
+
+  .card {
+    padding: 1rem 2.5rem;
+  }
+
+  .card h2 {
+    margin-bottom: 0.5rem;
+  }
+
+  .center {
+    padding: 8rem 0 6rem;
+  }
+
+  .center::before {
+    transform: none;
+    height: 300px;
+  }
+
+  .description {
+    font-size: 0.8rem;
+  }
+
+  .description a {
+    padding: 1rem;
+  }
+
+  .description p,
+  .description div {
+    display: flex;
+    justify-content: center;
+    position: fixed;
+    width: 100%;
+  }
+
+  .description p {
+    align-items: center;
+    inset: 0 0 auto;
+    padding: 2rem 1rem 1.4rem;
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid rgba(var(--callout-border-rgb), 0.25);
+    background: linear-gradient(
+      to bottom,
+      rgba(var(--background-start-rgb), 1),
+      rgba(var(--callout-rgb), 0.5)
+    );
+    background-clip: padding-box;
+    backdrop-filter: blur(24px);
+  }
+
+  .description div {
+    align-items: flex-end;
+    pointer-events: none;
+    inset: auto 0 0;
+    padding: 2rem;
+    height: 200px;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgb(var(--background-end-rgb)) 40%
+    );
+    z-index: 1;
+  }
+}
+
+/* Tablet and Smaller Desktop */
+@media (min-width: 701px) and (max-width: 1120px) {
+  .grid {
+    grid-template-columns: repeat(2, 50%);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .vercelLogo {
+    filter: invert(1);
+  }
+
+  .logo,
+  .thirteen img {
+    filter: invert(1) drop-shadow(0 0 0.3rem #ffffff70);
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+```
+
+Create a new folder under the src folder and name it `contracts`. In this folder we will copy and paste two `.json` files.
+
+The first file is the `GroupBuy.json` file. To find this file, open the `artifacts` folder in the `hardhat` directory created earlier, then open the `contracts` folder and then the `GroupBuy.sol` folder. Copy the `GroupBuy.json` file and paste it in the `contracts` folder created earlier in the src directory.
+
+The second file is the `GroupBuyProduct.json` file. To find this file, open the `artifacts` folder in the `hardhat` directory created earlier, then open the `contracts` folder and then the `GroupBuyProduct.sol` folder. Copy the `GroupBuyProduct.json` file and paste it in the `contracts` folder created earlier in the src directory.
+
+Next, open your `App.js` file in the src folder, this is where our code will be written. Delete all the code in this file as we won't be needing any of it for this tutorial.
+
+Let's look at some of the variables that we use for this project. We have a variable `currentWalletAddress` to hold and store the user-connected MetaMask wallet address. All the group buy data will be stored in the `allGroupBuys` array variable. Then we also have an object `createGroupBuyFields` to store the user inputs when creating a group buy. The `activeGroupBuy` variable stores the current group buy that the user clicks into to see the details. Lastly, we have the `isLoading` and `loadedData` variables to display the loading dialog and dialog text when a process is ongoing.`
+
+```js
+  const [currentWalletAddress, setCurrentWalletAddress] = useState("No Address Linked");
+  const [allGroupBuys, setAllGroupBuys] = useState(null);
+  const [createGroupBuyFields, setGroupBuyFields] = useState({
+    endTime: 0,
+    price: 0,
+    productName: "",
+    productDescription: "",
+  });
+  const [activeGroupBuy, setGroupBuyToActive] = useState(null);
+  const [connectWalletText, setConnectWalletText] = useState("Connect wallet");
+
+  // whether or not to show the loading dialog
+  const [isLoading, setIsLoading] = useState(false);
+
+  // text data to display on loading dialog
+  const [loadedData, setLoadedData] = useState("Loading...");
+```
+
+Let’s move on to the main functions of the group buy application.
+
+#### 1. `getAllGroupBuys` function
+Firstly, let's start off with the getAllGroupBuys function found which will retrieve all group buys data from the blockchain. The first part of the function attempts to connect the user's MetaMask wallet and stores the user's wallet address in a variable. 
 
 
 
