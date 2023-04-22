@@ -506,7 +506,9 @@ To deploy, open up a terminal pointing at hardhat directory and execute this com
   npx hardhat run scripts/deploy.js --network alfajores
 ```
 
+Copy the contract address displayed in the terminal as we would need it in the frontend to interact with our smart contracts
 
+## Building the Frontend
 
 
 
