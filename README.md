@@ -523,12 +523,16 @@ Now to run the app, execute these commands in the terminal:
   npm start
 ```
 
+You project should look like this
+
+![](https://github.com/lypso1/group-buy/blob/main/images/first%20image.png)
+
 Now let's install [ethers.js](https://docs.ethers.org/v5/) library. Ethers.js library aims to be a complete and compact library for interacting with the Ethereum Blockchain and its ecosystem.
 
 > Note : We install v5 specifically since the new v6 has breaking changes to the code.
 
 ```bash
-npm install ethers@5
+  npm install ethers@5
 ```
 Now go to App.css file in the src folder and replace all the contents of this file with the following code, this would add some styling to your dapp.
 ```css
@@ -935,9 +939,9 @@ Create a new folder under the src folder and name it `contracts`. In this folder
 
 - Next, open your `App.js` file in the src folder, this is where our code will be written. Delete all the code in this file as we won't be needing any of it for this tutorial.
 
-We will be importing our contract's `abi` and setting our contract address which we copied from the terminal after deploying our `GroupBuy` smart contract. Replace `your_contract_address` with the contract address copied after deploying the `GroupBuy` smart contract.
+We will be importing our contract's `abi` and setting our contract address which we copied from the terminal after deploying our `GroupBuy` smart contract.
 
-Let's look at some of the variables that we use for this project. We have a variable `currentWalletAddress` to hold and store the user-connected MetaMask wallet address. All the group buy data will be stored in the `allGroupBuys` array variable. Then we also have an object `createGroupBuyFields` to store the user inputs when creating a group buy. The `activeGroupBuy` variable stores the current group buy that the user clicks into to see the details. Lastly, we have the `isLoading` and `loadedData` variables to display the loading dialog and dialog text when a process is ongoing.
+Let's look at some of the variables that we use for this project. We have a variable `currentWalletAddress` to hold and store the user-connected MetaMask wallet address. All the group buy data will be stored in the `allGroupBuys` array variable. Then we also have an object `createGroupBuyFields` to store the user inputs when creating a group buy. The `activeGroupBuy` variable stores the current group buy that the user clicks into to see the details.
 
 ```js
 import { useEffect, useState } from 'react';
@@ -960,16 +964,11 @@ function App () {
   });
   const [activeGroupBuy, setGroupBuyToActive] = useState(null);
   const [connectWalletText, setConnectWalletText] = useState("Connect wallet");
-
-  // whether or not to show the loading dialog
-  const [isLoading, setIsLoading] = useState(false);
-
-  // text data to display on loading dialog
-  const [loadedData, setLoadedData] = useState("Loading...");
  
 }
 export default App;
 ```
+> Replace `your_contract_address` in the code above with the contract address saved in the `.env` file.
 
 Let’s move on to the main functions of the group buy application.
 
@@ -1569,7 +1568,7 @@ function App() {
                 {allGroupBuys.map((groupBuy) => (
                   <div className="createGroupBuyContainer">
                     <p className="paragraphText">
-                      Product Name: {groupBuy.name}
+                      Product Name: {groupBuy.productName}
                     </p>
                     <p className="paragraphText">
                       Product Description: {groupBuy.productDescription}
@@ -1690,9 +1689,10 @@ export default App;
 ```
 
 That's all for the frontend. Your project should look somehting like this
-![]()
 
-Your GroupBuy dapp should work without any errors 🚀.
+![](https://github.com/lypso1/group-buy/blob/main/images/final%20image.png)
+
+Great! Your GroupBuy dapp should work without any errors 🚀.
 
 To test your project, you'll need two accounts created on metamask. To do this, read this [article](https://digitalpinas.com/create-metamask-account/#:~:text=How%20to%20create%20Additional%20Metamask%20Account%20on%20Browser,click%20%E2%80%9CCreate%E2%80%9D%20to%20have%20an%20additional%20Metamask%20account.) for more details.
 
