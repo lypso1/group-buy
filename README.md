@@ -931,16 +931,21 @@ nav button {
 ```
 
 Create a new folder under the src folder and name it `contracts`. In this folder we will copy and paste two `.json` files.
+- The first file is the `GroupBuy.json` file. To find this file, open the `artifacts` folder in the `hardhat` directory created earlier, then open the `contracts` folder and then the `GroupBuy.sol` folder. Copy the `GroupBuy.json` file and paste it in the `contracts` folder created earlier in the src directory.
 
-The first file is the `GroupBuy.json` file. To find this file, open the `artifacts` folder in the `hardhat` directory created earlier, then open the `contracts` folder and then the `GroupBuy.sol` folder. Copy the `GroupBuy.json` file and paste it in the `contracts` folder created earlier in the src directory.
+- The second file is the `GroupBuyProduct.json` file. To find this file, open the `artifacts` folder in the `hardhat` directory created earlier, then open the `contracts` folder and then the `GroupBuyProduct.sol` folder. Copy the `GroupBuyProduct.json` file and paste it in the `contracts` folder created earlier in the src directory.
 
-The second file is the `GroupBuyProduct.json` file. To find this file, open the `artifacts` folder in the `hardhat` directory created earlier, then open the `contracts` folder and then the `GroupBuyProduct.sol` folder. Copy the `GroupBuyProduct.json` file and paste it in the `contracts` folder created earlier in the src directory.
-
-Next, open your `App.js` file in the src folder, this is where our code will be written. Delete all the code in this file as we won't be needing any of it for this tutorial.
+- Next, open your `App.js` file in the src folder, this is where our code will be written. Delete all the code in this file as we won't be needing any of it for this tutorial.
 
 Let's look at some of the variables that we use for this project. We have a variable `currentWalletAddress` to hold and store the user-connected MetaMask wallet address. All the group buy data will be stored in the `allGroupBuys` array variable. Then we also have an object `createGroupBuyFields` to store the user inputs when creating a group buy. The `activeGroupBuy` variable stores the current group buy that the user clicks into to see the details. Lastly, we have the `isLoading` and `loadedData` variables to display the loading dialog and dialog text when a process is ongoing.`
 
 ```js
+  import { useEffect, useState } from 'react';
+  import './App.css';
+  import { ethers } from 'ethers';
+  import { groupBuyAbi, groupBuyAddress } from './contracts/groupBuy';
+  import { groupBuyProductAbi } from './contracts/groupBuyProduct';
+  
   const [currentWalletAddress, setCurrentWalletAddress] = useState("No Address Linked");
   const [allGroupBuys, setAllGroupBuys] = useState(null);
   const [createGroupBuyFields, setGroupBuyFields] = useState({
@@ -961,10 +966,250 @@ Let's look at some of the variables that we use for this project. We have a vari
 
 Let’s move on to the main functions of the group buy application.
 
-#### 1. `getAllGroupBuys` function
-Firstly, let's start off with the getAllGroupBuys function found which will retrieve all group buys data from the blockchain. The first part of the function attempts to connect the user's MetaMask wallet and stores the user's wallet address in a variable. 
+#### 1. `getProviderOrSigner` function
+Explanation of this function is found in the comments
+```js
+/**
+   * Returns a Provider or Signer object representing the Ethereum RPC with or without the
+   * signing capabilities of metamask attached
+   *
+   * A `Provider` is needed to interact with the blockchain - reading transactions, reading balances, reading state, etc.
+   *
+   * A `Signer` is a special type of Provider used in case a `write` transaction needs to be made to the blockchain, which involves the connected account
+   * needing to make a digital signature to authorize the transaction being sent. Metamask exposes a Signer API to allow your website to
+   * request signatures from the user using Signer functions.
+   *
+   * @param {*} needSigner - True if you need the signer, default false otherwise
+  */
+  const getProviderOrSigner = async(needSigner = false) => {
+    // A Web3Provider wraps a standard Web3 provider, which is
+    // what MetaMask injects as window.ethereum into each page
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
 
+    // MetaMask requires requesting permission to connect users accounts
+    await provider.send("eth_requestAccounts", []);
 
+    // Get the chainId of the current network connected on metamask
+    // If user is not connected to the Celo Alfajores network, let them know and throw an error
+    const { chainId } = await provider.getNetwork();
+    if(chainId !== 44787) {
+      alert("Change network to Celo Alfajores");
+      new Error("Change network to Celo Alfajores");
+    }
+    if(needSigner) {
+      // The MetaMask plugin also allows signing transactions to
+      // send ether and pay to change state within the blockchain.
+      // For this, you need the account signer...
+      const signer = provider.getSigner();
+      return signer;
+    }
+    return provider;
+  }
+```
 
+#### 4. `connectWallet` function
+Explanation of this function is found in the comments
+```js
+/*
+    connectWallet: Connects the MetaMask wallet
+  */
+  const connectWallet = async () => {
+    try {
+      // Get the signer which in our case is MetaMask, as well as the connected address
+      // When used for the first time, it prompts the user to connect their wallet
+      const signer = await getProviderOrSigner(true);
+      const connectedAddress = await signer.getAddress();
 
+      setCurrentWalletAddress(connectedAddress);
+      setConnectWalletText("connected");
+    } catch (error) {
+      console.log(error);
+    }
+  }
+```
 
+#### 3. `getAllGroupBuys` function
+Firstly, let's start off with the `getAllGroupBuys` function which will retrieve all group buys data from the blockchain. The first part of the function attempts to connect the user's MetaMask wallet and stores the user's wallet address in a variable. 
+
+In order to call functions in the smart contract, we will need to create a contract instance of the group buy manager smart contract using the `ethers.Contract()` library function. The 3 parameters that are passed in as arguments are the group buy manager contract address(which was displayed in the terminal after we deployed the smart contract), the group buy manager ABI as well as the current signer. Once we have the contract instance, we can call the `groupBuyIDCounter` function from the group buy manager smart contract to get the number of stored group buy
+
+Now that we have the number of stored group buys, we will need to call the `getGroupBuyInfo` function from the group buy manager smart contract to retrieve all the information of each group buy. The `getGroupBuyInfo` function takes in an index. It will then return an array of the group buy data such as productName, productDescription, endTime, and price. The data returned is stored in a new object variable `newGroupBuys` which is pushed into an array variable `groupBuyArray`
+
+Lastly, in this function we need to set the `groupBuyArray` variable into the React state variable so that we can display the information needed in the web application later.
+```js
+  const getAllGroupBuys = async() => {
+    try {
+      const provider = await getProviderOrSigner();
+      const groupBuyContract = new ethers.Contract(
+        groupBuyAddress,
+        groupBuyAbi,
+        provider
+      )
+
+      const groupBuyLength = await groupBuyContract.groupBuyIDCounter();
+      let groupBuyArray = [];
+      for(let i = 0; i < groupBuyLength.toNumber(); i++) {
+        const groupBuy = await groupBuyContract.getGroupBuyInfo(i);
+        const groupBuyAddress = await groupBuyContract.getGroupBuysAddress(i);
+        
+        let endTime = groupBuy.endTime.toNumber();
+        let groupBuyState = groupBuy.groupBuyState.toNumber();
+        let price = groupBuy.price;
+        let productName = groupBuy.name;
+        let productDescription = groupBuy.description;
+        let sellerAddress = groupBuy.seller;
+
+        let newGroupBuy = {
+          endTime: endTime,
+          price: (price / 1000000).toString(),
+          seller: sellerAddress.toLowerCase(),
+          groupBuyState: groupBuyState,
+          productName: productName,
+          productDescription: productDescription,
+          groupBuyAddress,
+          buyers: [],
+        }
+        groupBuyArray.push(newGroupBuy);
+      }
+
+      setAllGroupBuys(groupBuyArray);
+    } catch(err) {
+      console.log(err);
+    }
+  }
+```
+
+#### 4. `createGroupBuy` function
+We will look at the createGroupBuy function. The first portion of the code checks for user input requirements to ensure that they are not empty, the price cannot be below zero and the duration of the group buy is at least 5 minutes.
+
+First we will be calling the `createGroupBuy` function from the smart contract. The function has 4 parameters – `endTime`, `price`, `productName` and `productDescription`. The price that we are passing in the function needs to be converted to meet the same format as the CELO token, thus the `ethers.utils.parseUnits` functionality comes in handy. Next, we need to wait for the transaction to be finished before proceeding.
+
+```js
+  const createGroupBuy = async () => {
+    try {
+       //check if required fields are empty
+       if (
+        !createGroupBuyFields.price ||
+        !createGroupBuyFields.endTime ||
+        !createGroupBuyFields.productName ||
+        !createGroupBuyFields.productDescription
+      ) {
+        return alert("Fill all the fields");
+      }
+
+      //check if fields meet requirements
+      if (createGroupBuyFields.price < 0) {
+        return alert("Price must be more than 0");
+      }
+
+      if (createGroupBuyFields.endTime < 5) {
+        return alert("Duration must be more than 5 mins");
+      }
+      const signer = await getProviderOrSigner(true);
+
+      const groupBuyContract = new ethers.Contract(
+        groupBuyAddress,
+        groupBuyAbi,
+        signer
+      )
+      
+      const tx = await groupBuyContract.createGroupbuy(
+        createGroupBuyFields.endTime * 60, // Converting minutes to seconds
+        ethers.utils.parseUnits(createGroupBuyFields.price.toString(), 6), 
+        createGroupBuyFields.productName,
+        createGroupBuyFields.productDescription,
+      )
+      
+      await tx.wait();
+      
+      // call getAllGroupBuys to refresh the current list
+      await getAllGroupBuys();
+
+    } catch (err) {
+      console.log(err);
+    }
+  }
+```
+
+#### 5. `setActiveGroupBuy` function
+The setActiveGroupBuy function is triggered when the user clicks on a specific group buy to view the details of it. The main purpose of this function is to call the group buy smart contract that the user clicks on. It will retrieve the list of all orders placed by any users and set the data into the React state variable to display the information to the user.
+
+```js
+  const setActiveGroupBuy = async(groupBuy) => {
+    const signer = await getProviderOrSigner(true);
+
+    //create contract instance
+    const groupBuyContract = new ethers.Contract(
+      groupBuy.groupBuyAddress,
+      groupBuyProductAbi,
+      signer
+    );
+    console.log(groupBuyContract);
+
+    //get all current buyers(address)
+    let allCurrentBuyers = await groupBuyContract.getAllOrders();
+    console.log(allCurrentBuyers);
+
+    //set current group buy to active and update the buyers field
+    setGroupBuyToActive({
+      ...groupBuy,
+      buyers: allCurrentBuyers,
+    });
+  }
+```
+
+#### 6. `productOrder` function
+Now let’s move on to the `productOrder` function. We will call the `placeOrder` function in the group buy smart contract. The `placeOrder` function in the smart contract does not take in any parameters. As usual, we will need to wait for the transaction to be completed.
+
+```js
+  const productOrder = async(groupBuy) => {
+    try{
+      const signer = await getProviderOrSigner(true);
+      const groupBuyProductContract = new ethers.Contract(
+        groupBuy.groupBuyAddress,
+        groupBuyProductAbi,
+        signer
+      )
+
+      const tx = await groupBuyProductContract.placeOrder({value: ethers.utils.parseEther(groupBuy.price)});
+      await tx.wait();
+
+      //get updated buyers
+      //get all current buyers(address) and price(same for all)
+      const allCurrentBuyers = await groupBuyProductContract.getAllOrders();
+      //set current group buy to active
+      setGroupBuyToActive({
+        ...groupBuy,
+        buyers: allCurrentBuyers,
+      });
+
+    } catch(err) {
+      console.log(err)
+    }
+  }
+```
+
+#### 7. `withdraw` function
+Lastly, we have the `withdraw` function. The function can only be triggered by the seller and only when the group buy duration has ended. As the withdraw function does not take in any parameter we can simply call it. Next, we wait for the transaction to be completed.
+
+```js
+  const withdraw = async(groupBuy) => {
+    try{
+      const signer = await getProviderOrSigner(true);
+      const groupBuyProductContract = new ethers.Contract(
+        groupBuy.groupBuyAddress,
+        groupBuyProductAbi,
+        signer
+      );
+
+      console.log(groupBuyProductContract);
+
+      const tx = await groupBuyProductContract.withdrawFunds();
+      await tx.wait();
+
+      // console.log(tx);
+    } catch(err) {
+      console.log(err);
+    }
+  }
+```
