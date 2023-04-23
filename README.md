@@ -17,7 +17,7 @@ A group buy is a type of purchasing arrangement where a group of individuals poo
 
 In this tutorial, we will be writing two smart contracts that allow multiple buyers to place orders in CELO. We will also be creating a group buying web application which provides us with an interface to interact with the smart contracts.
 
-To successfully test out the web application, you will need to have three accounts in your MetaMask wallet. Each account should have at least 10
+To successfully test out the web application, you will need to have three accounts in your MetaMask wallet. Each account should have at least 10 CELO
 
 
 
@@ -59,7 +59,7 @@ To setup a Hardhat project, Open up a terminal and execute these commands
   npm install --save-dev hardhat
 ```
 
-If you are a Windows user, you'll have to add one more dependency. so in the terminal, add the following command :
+If you are a Windows user, you'll have to add one more dependency. So in the terminal, add the following command :
 ```bash
   npm install --save-dev @nomicfoundation/hardhat-toolbox
 ```
@@ -500,7 +500,7 @@ To compile the contract, open up a terminal pointing at hardhat directory and ex
 ```
 
 You should get a message in the terminal like this
-- image of terminal
+![]()
 
 To deploy, open up a terminal pointing at hardhat directory and execute this commands
 ```bash
