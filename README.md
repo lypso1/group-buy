@@ -618,6 +618,7 @@ nav button {
   background-color: black;
   color: white;
   border: none;
+  cursor: pointer;
 }
 
 
@@ -626,6 +627,7 @@ nav button {
   padding: 10px;
   background-color: green;
   color: white;
+  cursor: pointer;
 }
 
 .placeOrderBtn {
@@ -634,6 +636,7 @@ nav button {
   background-color: orange;
   color: white;
   border: none;
+  cursor: pointer;
 }
 
 .withdrawFundsBtn {
@@ -643,6 +646,7 @@ nav button {
   background-color: red;
   color: white;
   border: none;
+  cursor: pointer;
 }
 
 .paragraphText {
