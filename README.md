@@ -1,4 +1,6 @@
 # DEPLOYING A GROUP BUY SMART CONTRACT ON THE CELO BLOCKHAIN
+- Demo: [Group Buy Project](https://group-buy.vercel.app/)
+- Estimated Time: 40 minutes
 
 ## Table of Contents
 - [Introduction](#introduction)
