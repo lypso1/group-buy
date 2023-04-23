@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 import { ethers } from 'ethers';
-import { groupBuyAbi, groupBuyAddress } from './contracts/groupBuy';
-import { groupBuyProductAbi } from './contracts/groupBuyProduct';
+import GroupBuy from './contracts/GroupBuy.json';
+import GroupBuyProduct from './contracts/GroupBuyProduct.json';
+  
+const groupBuyAddress = "0x3Fd077bAAD6417829dCB2Fce8AF4fE36782A7b34";
 
-
-function App() {
+function App () {
+  const [withdrawn, setWithdrawn] = useState(false);
   const [currentWalletAddress, setCurrentWalletAddress] = useState("No Address Linked");
   const [allGroupBuys, setAllGroupBuys] = useState(null);
   const [createGroupBuyFields, setGroupBuyFields] = useState({
@@ -15,155 +17,72 @@ function App() {
     productDescription: "",
   });
   const [activeGroupBuy, setGroupBuyToActive] = useState(null);
-  const [connectWalletText, setConnectWalletText] = useState("Connect wallet")
+  const [connectWalletText, setConnectWalletText] = useState("Connect wallet");
 
-  // whether or not to show the loading dialog
-  const [isLoading, setIsLoading] = useState(false);
-
-  // text data to display on loading dialog
-  const [loadedData, setLoadedData] = useState("Loading...");
-
-  function openModal() {
-    setIsLoading(true);
-  }
-
-  function closeModal() {
-    setIsLoading(false);
-  }
-
+  /**
+   * Returns a Provider or Signer object representing the Ethereum RPC with or without the
+   * signing capabilities of metamask attached
+   *
+   * A `Provider` is needed to interact with the blockchain - reading transactions, reading balances, reading state, etc.
+   *
+   * A `Signer` is a special type of Provider used in case a `write` transaction needs to be made to the blockchain, which involves the connected account
+   * needing to make a digital signature to authorize the transaction being sent. Metamask exposes a Signer API to allow your website to
+   * request signatures from the user using Signer functions.
+   *
+   * @param {*} needSigner - True if you need the signer, default false otherwise
+  */
   const getProviderOrSigner = async(needSigner = false) => {
+  // A Web3Provider wraps a standard Web3 provider, which is
+  // what MetaMask injects as window.ethereum into each page
     const provider = new ethers.providers.Web3Provider(window.ethereum);
-    
+
+    // MetaMask requires requesting permission to connect users accounts
     await provider.send("eth_requestAccounts", []);
 
+    // Get the chainId of the current network connected on metamask
+    // If user is not connected to the Celo Alfajores network, let them know and throw an error
     const { chainId } = await provider.getNetwork();
     if(chainId !== 44787) {
       alert("Change network to Celo Alfajores");
       new Error("Change network to Celo Alfajores");
     }
     if(needSigner) {
+      // The MetaMask plugin also allows signing transactions to
+      // send ether and pay to change state within the blockchain.
+      // For this, you need the account signer...
       const signer = provider.getSigner();
       return signer;
     }
     return provider;
   }
-
+  
+  /*
+    connectWallet: Connects the MetaMask wallet
+  */
   const connectWallet = async () => {
-    const signer = await getProviderOrSigner(true);
-    const connectedAddress = await signer.getAddress();
-
-    setCurrentWalletAddress(connectedAddress);
-    setConnectWalletText("connected");
-  }
-
-  const createGroupBuy = async () => {
-    console.log("Create Group");
     try {
-       //check if required fields are empty
-       if (
-        !createGroupBuyFields.price ||
-        !createGroupBuyFields.endTime ||
-        !createGroupBuyFields.productName ||
-        !createGroupBuyFields.productDescription
-      ) {
-        return alert("Fill all the fields");
-      }
-
-      //check if fields meet requirements
-      if (createGroupBuyFields.price < 0) {
-        return alert("Price must be more than 0");
-      }
-
-      if (createGroupBuyFields.endTime < 5) {
-        return alert("Duration must be more than 5 mins");
-      }
+      // Get the signer which in our case is MetaMask, as well as the connected address
+      // When used for the first time, it prompts the user to connect their wallet
       const signer = await getProviderOrSigner(true);
-      // const provider = getProviderOrSigner();
+      const connectedAddress = await signer.getAddress();
 
-      const groupBuyContract = new ethers.Contract(
-        groupBuyAddress,
-        groupBuyAbi,
-        signer
-      )
-      
-      console.log("Creating new product");
-      const tx = await groupBuyContract.createGroupbuy(
-        createGroupBuyFields.endTime * 60, // Converting minutes to seconds
-        ethers.utils.parseUnits(createGroupBuyFields.price.toString(), 6), 
-        createGroupBuyFields.productName,
-        createGroupBuyFields.productDescription,
-      )
-      
-      console.log("Waiting for transaction to be mined");
-      await tx.wait();
-      console.log("Transaction mined, waiting for all group buy");
-
-      await getAllGroupBuys();
-      console.log("That's all group buy");
-
-    } catch (err) {
-      console.log(err);
+      setCurrentWalletAddress(connectedAddress);
+      setConnectWalletText("connected");
+    } catch (error) {
+      console.log(error);
     }
   }
 
-  const productOrder = async(groupBuy) => {
-    try{
-      const signer = await getProviderOrSigner(true);
-      const groupBuyProductContract = new ethers.Contract(
-        groupBuy.groupBuyAddress,
-        groupBuyProductAbi,
-        signer
-      )
-      console.log(groupBuyProductContract);
-
-      const tx = await groupBuyProductContract.placeOrder({value: ethers.utils.parseEther(groupBuy.price)});
-      await tx.wait();
-      console.log(tx);
-
-      //get updated buyers
-      //get all current buyers(address) and price(same for all)
-      const allCurrentBuyers = await groupBuyProductContract.getAllOrders();
-      //set current group buy to active
-      setGroupBuyToActive({
-        ...groupBuy,
-        buyers: allCurrentBuyers,
-      });
-
-    } catch(err) {
-      console.log(err)
-    }
-  }
-
-  const withdraw = async(groupBuy) => {
-    try{
-      const signer = await getProviderOrSigner(true);
-      const groupBuyProductContract = new ethers.Contract(
-        groupBuy.groupBuyAddress,
-        groupBuyProductAbi,
-        signer
-      );
-
-      console.log(groupBuyProductContract);
-
-      const tx = await groupBuyProductContract.withdrawFunds();
-      await tx.wait();
-
-      // console.log(tx);
-    } catch(err) {
-      console.log(err);
-    }
-  }
   const getAllGroupBuys = async() => {
     try {
       const provider = await getProviderOrSigner();
       const groupBuyContract = new ethers.Contract(
         groupBuyAddress,
-        groupBuyAbi,
+        GroupBuy.abi,
         provider
       )
 
       const groupBuyLength = await groupBuyContract.groupBuyIDCounter();
-      console.log(groupBuyLength.toNumber());
       let groupBuyArray = [];
       for(let i = 0; i < groupBuyLength.toNumber(); i++) {
         const groupBuy = await groupBuyContract.getGroupBuyInfo(i);
@@ -188,11 +107,54 @@ function App() {
         }
         groupBuyArray.push(newGroupBuy);
       }
-      console.log(groupBuyArray);
 
       setAllGroupBuys(groupBuyArray);
-      console.log(activeGroupBuy);
     } catch(err) {
+      console.log(err);
+    }
+  }
+
+  const createGroupBuy = async () => {
+    try {
+       //check if required fields are empty
+       if (
+        !createGroupBuyFields.price ||
+        !createGroupBuyFields.endTime ||
+        !createGroupBuyFields.productName ||
+        !createGroupBuyFields.productDescription
+      ) {
+        return alert("Fill all the fields");
+      }
+
+      //check if fields meet requirements
+      if (createGroupBuyFields.price < 0) {
+        return alert("Price must be more than 0");
+      }
+
+      if (createGroupBuyFields.endTime < 5) {
+        return alert("Duration must be more than 5 mins");
+      }
+      const signer = await getProviderOrSigner(true);
+
+      const groupBuyContract = new ethers.Contract(
+        groupBuyAddress,
+        GroupBuy.abi,
+        signer
+      )
+      
+      const tx = await groupBuyContract.createGroupbuy(
+        createGroupBuyFields.endTime * 60, // Converting minutes to seconds
+        ethers.utils.parseUnits(createGroupBuyFields.price.toString(), 6), 
+        createGroupBuyFields.productName,
+        createGroupBuyFields.productDescription,
+      )
+      
+      await tx.wait();
+      
+      // call getAllGroupBuys to refresh the current list
+      await getAllGroupBuys();
+
+    } catch (err) {
       console.log(err);
     }
   }
@@ -203,20 +165,63 @@ function App() {
     //create contract instance
     const groupBuyContract = new ethers.Contract(
       groupBuy.groupBuyAddress,
-      groupBuyProductAbi,
+      GroupBuyProduct.abi,
       signer
     );
-    console.log(groupBuyContract);
 
     //get all current buyers(address)
     let allCurrentBuyers = await groupBuyContract.getAllOrders();
-    console.log(allCurrentBuyers);
 
     //set current group buy to active and update the buyers field
     setGroupBuyToActive({
       ...groupBuy,
       buyers: allCurrentBuyers,
     });
+  }
+
+  const productOrder = async(groupBuy) => {
+    try{
+      const signer = await getProviderOrSigner(true);
+      const groupBuyProductContract = new ethers.Contract(
+        groupBuy.groupBuyAddress,
+        GroupBuyProduct.abi,
+        signer
+      )
+
+      const tx = await groupBuyProductContract.placeOrder({value: ethers.utils.parseEther(groupBuy.price)});
+      await tx.wait();
+
+      //get updated buyers
+      //get all current buyers(address) and price(same for all)
+      const allCurrentBuyers = await groupBuyProductContract.getAllOrders();
+      //set current group buy to active
+      setGroupBuyToActive({
+        ...groupBuy,
+        buyers: allCurrentBuyers,
+      });
+
+    } catch(err) {
+      console.log(err)
+    }
+  }
+
+  const withdraw = async(groupBuy) => {
+    try{
+      const signer = await getProviderOrSigner(true);
+      const groupBuyProductContract = new ethers.Contract(
+        groupBuy.groupBuyAddress,
+        GroupBuyProduct.abi,
+        signer
+      );
+
+      const tx = await groupBuyProductContract.withdrawFunds();
+      await tx.wait();
+      setWithdrawn(true);
+
+      // console.log(tx);
+    } catch(err) {
+      console.log(err);
+    }
   }
 
   const getGroupBuyState = (groupBuy) => {
@@ -298,7 +303,8 @@ function App() {
           </button>
           {groupBuy.seller === currentWalletAddress.toLowerCase() && //only seller can withdraw funds
             state === "Ended" && //can only withdraw after group buy ends
-            groupBuy.buyers.length > 0 && ( //withdraw if there are buyers
+            groupBuy.buyers.length > 0 &&
+            withdrawn === false && ( //withdraw if there are buyers
               <button
                 className="withdrawFundsBtn"
                 onClick={() => withdraw(groupBuy)}
@@ -341,7 +347,7 @@ function App() {
                 {allGroupBuys.map((groupBuy) => (
                   <div className="createGroupBuyContainer">
                     <p className="paragraphText">
-                      Product Name: {groupBuy.name}
+                      Product Name: {groupBuy.productName}
                     </p>
                     <p className="paragraphText">
                       Product Description: {groupBuy.productDescription}
@@ -452,17 +458,9 @@ function App() {
           >
             Create Group Buy
           </button>
-          <button
-            type="button"
-            className="createGroupBuyBtn"
-            onClick={() => getAllGroupBuys()}
-          >
-            Get Group Buy
-          </button>
         </div>
       </div>
     </>
   );
 }
-
 export default App;
