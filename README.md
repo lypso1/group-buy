@@ -499,15 +499,12 @@ To compile the contract, open up a terminal pointing at hardhat directory and ex
   npx hardhat compile
 ```
 
-You should get a message in the terminal like this
-![]()
-
 To deploy, open up a terminal pointing at hardhat directory and execute this commands
 ```bash
   npx hardhat run scripts/deploy.js --network alfajores
 ```
 
-Copy and save the contract address displayed in the terminal as we would need it in the frontend to interact with our smart contracts
+Copy and save the contract address displayed in the terminal in the .env file. We would need it in the frontend to interact with our smart contracts
 
 ## Building the Frontend
 To develop the frontend of the website of our project, we will be using React. React is a javascript framework which is used to make websites. You first need to create a new react app. Your folder structure should look something like this:
