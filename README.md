@@ -1697,7 +1697,7 @@ That's all for the frontend. Your project should look somehting like this
 
 Your GroupBuy dapp should work without any errors 🚀.
 
-To test your project, you'll need two accounts created on metamask. To do this, read this [article]()https://digitalpinas.com/create-metamask-account/#:~:text=How%20to%20create%20Additional%20Metamask%20Account%20on%20Browser,click%20%E2%80%9CCreate%E2%80%9D%20to%20have%20an%20additional%20Metamask%20account. for more details.
+To test your project, you'll need two accounts created on metamask. To do this, read this [article](https://digitalpinas.com/create-metamask-account/#:~:text=How%20to%20create%20Additional%20Metamask%20Account%20on%20Browser,click%20%E2%80%9CCreate%E2%80%9D%20to%20have%20an%20additional%20Metamask%20account.) for more details.
 
 After testing your dapp and checking that everything behaves correctly, upload your project to a new GitHub repository as this will be needed to deploy our dapp using vercel
 
