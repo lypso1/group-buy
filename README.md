@@ -1,10 +1,11 @@
-# DEPLOYING A GROUP BUY SMART CONTRACT ON THE CELO BLOCKHAIN
+# DEPLOYING A GROUP BUY SMART CONTRACT ON THE CELO BLOCKHAIN:
+
 - Demo: [Group Buy Project](https://group-buy.vercel.app/)
 - Estimated Time: 40 minutes
 
-## Table of Contents
+## Table of Contents:
 - [Introduction](#introduction)
-- [Prerequisites](#prerequisites)
+- [Pre-requisites](#pre-requisites)
 - [Requirements](#requirements)
 - [Tech stack](#tech-stack)
 - [Learning outcomes](#learning-outcomes)
@@ -13,44 +14,50 @@
 - [Deploying to vercel](#deploying-to-vercel)
 - [Conclusion](#conclusion)
 
+## Introduction:
 
-## Introduction
 A group buy is a type of purchasing arrangement where a group of individuals pool their money together to buy a product or service in bulk. The goal of a group buy is to secure a better price for the product or service than what each individual would have paid if they had purchased it on their own. Typically, a group buy is organized by one person, who collects the funds from the participants and makes the purchase on behalf of the group. Once the product or service is received, it is then distributed among the participants according to the terms of the arrangement. Group buys are popular in various communities, such as online forums, social media groups, and cryptocurrency communities, where members have shared interests and can benefit from buying in bulk. One example of a group buy application is [WeBuy](https://www.webuysg.com/).
 
 In this tutorial, we will be writing two smart contracts that allow multiple buyers to place orders in CELO. We will also be creating a group buying web application which provides us with an interface to interact with the smart contracts.
 
 To successfully test out the web application, you will need to have three accounts in your MetaMask wallet. Each account should have at least 10 CELO
 
+## Pre-requisites:
 
-
-## Prerequisites
 To follow along with this tutorial, you should have a basic understanding of:
-1. React and web development.
-2. Solidity.
-3. The Celo blockchain.
-4. The GitHub interface.
 
-## Requirements
+1. [React](https://react-cn.github.io/react/downloads.html) and web development.
+2. [Solidity](https://sourceforge.net/projects/solidity.mirror/)
+3. Celo blockchain.
+4. [GitHub](https://desktop.github.com/)
+
+## Requirements:
+
 - Have the Metamask extension wallet installed and set up. If not, install [MetamaskExtensionWallet](https://metamask.io/)
 - [Node.js](https://nodejs.org/) installed on your machine.
 - An IDE such as [Vscode](https://code.visualstudio.com/) or [Sublime Text](https://www.sublimetext.com/).
 - Command line or similar software installed.
 
-## Tech Stack
-We will use the following tools and languages in this tutorial
+## Tech Stack:
+
+We will use the following tools and languages in this tutorial:
+
 - [Hardhat](https://hardhat.org/)
 - [Ethers.js](https://docs.ethers.org/v5/)
 - [Vercel](https://vercel.com/)
 
-## Learning Outcomes
+## Learning Outcomes:
+
 By the end of this tutorial, you will be able to:
-- Interact with multiple file smart contract compiled and deployed using hardhat
-- Build and run a group buying web application
 
-## Building the Smart Contract
-For this tutorial we will be building two smart contracts – one for group buys called `GroupBuyProduct` and another as a manager for the group buys called `GroupBuy`. We will explain the use case of each smart contract individually.
+1. Interact with multiple file Smart Contracts compiled and deployed using hardhat.
+2. Build and run a group buying Web Application.
 
-To setup a Hardhat project, Open up a terminal and execute these commands
+## Building the Smart Contract:
+
+For this tutorial we will be building two Smart Contracts – one for group buys called `GroupBuyProduct` and another as a manager for the group buys called `GroupBuy`. We will explain the use case of each smart contract individually.
+
+To setup a Hardhat project, Open up a terminal and execute these following commands:
 
 ```bash
   mkdir GroupBuy
@@ -59,14 +66,17 @@ To setup a Hardhat project, Open up a terminal and execute these commands
   cd hardhat
   npm init --yes
   npm install --save-dev hardhat
+  
 ```
 
 If you are a Windows user, you'll have to add one more dependency. So in the terminal, add the following command :
+
 ```bash
   npm install --save-dev @nomicfoundation/hardhat-toolbox
 ```
 
 In the same directory where you installed Hardhat run:
+
 ```bash
 npx hardhat
 ```
@@ -74,16 +84,19 @@ Make sure you select `Create a Javascript Project` and then follow the steps in 
 
 In the contracts folder, delete the Lock.sol file and create a two new files in the folder. The first file should be named `GroupBuy.sol` and the second file named `GroupBuyProduct.sol`.
 
-### `GroupBuyProduct` Smart Contract
+### `GroupBuyProduct` Smart Contract:
+
 In this step, we focus on the functions and variables of the group buy smart contract. The group buy smart contract controls everything related to the individual group buy such as the placing of orders and the withdrawal of funds.
 
 For this smart contract, we are expecting it to do the following:
-Be able to store information regarding the group buy such as the end time, price, product name, and buyers.
-The buyers are able to place orders using the smart contract provided they did not place one earlier.
-The seller is able to withdraw funds after the group is closed.
-The seller can only close the group buy after the end time has reached.
 
-For this smart contract, we will be using the following variables.
+- Be able to store information regarding the group buy such as the end time, price, product name, and buyers.
+- The buyers are able to place orders using the smart contract provided they did not place one earlier.
+- The seller is able to withdraw funds after the group is closed.
+- The seller can only close the group buy after the end time has reached.
+
+For this smart contract, we will be using the following variables:
+
 - `endTime`: the timestamp indicating the ending time of the group buy
 - `startTime`: the timestamp indicating the start time of the group buy
 - `buyers`: array of buyers wallet address
@@ -94,7 +107,8 @@ For this smart contract, we will be using the following variables.
 
 Now that you know what variables will be used, we will be going through the functions in the smart contract.
 
-#### 1. `constructor` function
+#### 1. `constructor` function:
+
 The first function is the constructor which will be called when a new group is created on the frontend with the required input. This constructor function will add values to the variables that we mentioned earlier.
 ```solidity
     constructor(
@@ -112,7 +126,8 @@ The first function is the constructor which will be called when a new group is c
         productDescription = _productDescription;
     }
 ```
-#### 2. `getGroupBuyState` function
+#### 2. `getGroupBuyState` function:
+
 This function gets the current state of the group buy. It determines whether a group buy is open or closed by checking if the end time has passed. For this group buy, the seller cannot prematurely close a group buy so the only determining factor is the end time. If the end time has not passed, then it will still be considered open.
 ```solidity
     function getGroupBuyState() public view returns (GroupBuyState) {
@@ -120,7 +135,8 @@ This function gets the current state of the group buy. It determines whether a g
         return GroupBuyState.OPEN;
     }
 ```
-#### 3. `hasCurrentBid` function.
+#### 3. `hasCurrentBid` function:
+
 This function will check if the buyer has a current order. This is to prevent duplicate orders for the group buy. The function traverses the array of the buyers’ wallet addresses and determines if any of them matches the address that was passed into the function. If there is a match, it will return true. Otherwise, it will return false.
 ```solidity
     function hasCurrentBid(address buyer) public view returns (bool) {
@@ -134,7 +150,8 @@ This function will check if the buyer has a current order. This is to prevent du
     }
 ```
 
-#### 4. `getAllOrders` function
+#### 4. `getAllOrders` function:
+
 The function that we will be looking at next is the getAllOrders function where it will retrieve all the buyers’ wallet addresses. It will return all the buyer’s wallet addresses for that group buy.
 ```solidity
     function getAllOrders()
@@ -146,7 +163,8 @@ The function that we will be looking at next is the getAllOrders function where 
     }
 ```
 
-#### 5. `placeOrder` function
+#### 5. `placeOrder` function:
+
 The next function is the placeOrder function which will be called when an order is placed. When this function is called, it must pass 3 checks. The first is that the buyer wallet address calling the function must not be the same as the seller. This is to prevent the seller from placing orders and inflating order numbers. The second is that the group buy must be open and it should not accept orders when it is closed. The third is that the user placing the order must not already have an order in place to prevent duplicate orders. Once these 3 checks have passed, the function will then proceed to transfer the CELO from the buyer wallet address and transfer it to the group buy smart contract. Once the transfer is successful, it will then add the buyer’s wallet address to the array of buyers’ wallet addresses and emit the `NewOrder` event.
 
 An event is used to record actions that occur in a smart contract. These events are stored and can be viewed on the blockchain. For our smart contract, we have 3 events and they are `NewOrder`, `WithdrawFunds` and `GroupBuyClosed`.
@@ -163,7 +181,8 @@ An event is used to record actions that occur in a smart contract. These events 
     }
 ```
 
-#### 6. `withdrawFunds` function
+#### 6. `withdrawFunds` function:
+
 This function is called when the group buy has ended and the seller wants to withdraw the funds. The function will first check if the group buy has indeed ended and if the wallet address of the request sender matches the seller’s wallet address. If both checks pass, then it will transfer the CELO to the seller and emit the events `WithdrawFunds` and `GroupBuyClosed` which will record the end of the group buy.
 ```solidity
     function withdrawFunds() external returns (bool) {
@@ -186,7 +205,7 @@ Finally, to allow for adding more CELO deposits to the smart contract, we need t
     fallback() external payable {}
 ```
 
-That is all we would need for the `GroupBuyProduct` smart contract. Your file should look like this
+That is all we would need for the `GroupBuyProduct` smart contract. Your file should look like this:
 ```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
@@ -279,8 +298,8 @@ contract GroupBuyProduct {
 }
 ```
 
+### `GroupBuy` Smart Contract:
 
-### `GroupBuy` Smart Contract
 For this step, we will look at the group buy manager smart contract to see how it works.
 
 To see how the group buy manager smart contract looks like, check out the 'working code' at the end of this step.
@@ -297,7 +316,8 @@ Let's take a look at the variables that we will be using for this smart contract
 
 Next, we will go through the functions that are available for this group buy smart contract.
 
-#### 1. `createGroupBuy` function
+#### 1. `createGroupBuy` function:
+
 The first function is `createGroupBuy` and as the name suggests it is called by the user when creating a group buy. This function will take in 4 inputs which are necessary to set up the group buy smart contract. There are 2 checks that need to be done before a group buy smart contract is created. The first is that the price is more than 0. For prices, we will not accept zero or negative values as prices are usually not within that range. The second check is that the group buy end time is longer than 5 minutes from the current time. This would ensure that there is enough time for the group buy order to be placed. Once the checks are done, it will get the new group buy ID from the counter and then it will increment that counter to prevent repeated values. After that, the group buy smart contract will be created and it will be added to the group buy array and it will map the address of the new group buy smart contract to the allocated ID.
 
 ```solidity
@@ -324,7 +344,8 @@ The first function is `createGroupBuy` and as the name suggests it is called by 
     }
 ```
 
-#### 2. `getGroupBuyInfo` function
+#### 2. `getGroupBuyInfo` function:
+
 This function takes in an index and returns information of a list of group buys. Information provided will include name, description, price, seller address, the end time and the current state of the group buy.
 
 The function will us the index provided to get access to the information of a particular group buy and assigning them to local variables created. After assigning the information to the variables, these various variables will be returned by the function to the caller.
@@ -360,7 +381,8 @@ The function will us the index provided to get access to the information of a pa
     }
 ```
 
-#### 3. `getGroupBuysAddress` function
+#### 3. `getGroupBuysAddress` function:
+
 This function takes in the index as an argument. It uses the index to get the address of a particular group buy from the `groupBuys` mapping. This address is returned by the function to the caller.
 
 ```solidity
@@ -439,8 +461,9 @@ contract GroupBuy {
 }
 ```
 
-### Deploying The Smart Contract
-To deploy our smart contract, we will need to install some packages. Let's install dotenv package to be able to import the env file and use it in our config.
+### Deploying The Smart Contract:
+
+To deploy our Smart Contract, we will need to install some packages. Let's install dotenv package to be able to import the env file and use it in our config.
 
 Open up a terminal pointing at hardhat-tutorial directory and execute this command
 ```bash
@@ -508,7 +531,8 @@ To deploy, open up a terminal pointing at hardhat directory and execute this com
 
 Copy and save the contract address displayed in the terminal in the .env file. We would need it in the frontend to interact with our smart contracts
 
-## Building the Frontend
+## Building the Frontend:
+
 To develop the frontend of the website of our project, we will be using React. React is a javascript framework which is used to make websites. You first need to create a new react app. Your folder structure should look something like this:
 ```js
   - GroupBuy
@@ -516,10 +540,12 @@ To develop the frontend of the website of our project, we will be using React. R
      - frontend
 ```
 To create the `frontend` folder, make sure the terminal points to the `GroupBuy` folder and type:
+
 ```bash
   npx create-react-app frontend
 ```
 Now to run the app, execute these commands in the terminal:
+
 ```bash
   cd frontend
   npm start
@@ -579,7 +605,6 @@ nav button {
 
 }
 
-
 .createGroupBuy {
   margin: 20px;
   display: flex;
@@ -602,9 +627,6 @@ nav button {
   font-size: 1rem
 }
 
-
-
-
 .createGroupBuyBtn {
   margin: 20px;
   padding: 10px 15px;
@@ -622,7 +644,6 @@ nav button {
   border: none;
   cursor: pointer;
 }
-
 
 .seeMoreBtn {
   margin: 10px;
@@ -978,7 +999,8 @@ export default App;
 
 Let’s move on to the main functions of the group buy application.
 
-#### 1. `getProviderOrSigner` function
+#### 1. `getProviderOrSigner` function:
+
 Explanation of this function is found in the comments
 ```js
 /**
@@ -1019,7 +1041,8 @@ Explanation of this function is found in the comments
   }
 ```
 
-#### 2. `connectWallet` function
+#### 2. `connectWallet` function:
+
 Explanation of this function is found in the comments
 ```js
   /*
@@ -1040,7 +1063,8 @@ Explanation of this function is found in the comments
   }
 ```
 
-#### 3. `getAllGroupBuys` function
+#### 3. `getAllGroupBuys` function:
+
 Firstly, let's start off with the `getAllGroupBuys` function which will retrieve all group buys data from the blockchain. The first part of the function attempts to connect the user's MetaMask wallet and stores the user's wallet address in a variable. 
 
 In order to call functions in the smart contract, we will need to create a contract instance of the group buy manager smart contract using the `ethers.Contract()` library function. The 3 parameters that are passed in as arguments are the group buy manager contract address(which was displayed in the terminal after we deployed the smart contract), the group buy manager ABI as well as the current signer. Once we have the contract instance, we can call the `groupBuyIDCounter` function from the group buy manager smart contract to get the number of stored group buy
@@ -1091,8 +1115,9 @@ Lastly, in this function we need to set the `groupBuyArray` variable into the Re
   }
 ```
 
-#### 4. `createGroupBuy` function
-We will look at the createGroupBuy function. The first portion of the code checks for user input requirements to ensure that they are not empty, the price cannot be below zero and the duration of the group buy is at least 5 minutes.
+#### 4. `createGroupBuy` function:
+
+We will look at the `createGroupBuy` function. The first portion of the code checks for user input requirements to ensure that they are not empty, the price cannot be below zero and the duration of the group buy is at least 5 minutes.
 
 First we will be calling the `createGroupBuy` function from the smart contract. The function has 4 parameters – `endTime`, `price`, `productName` and `productDescription`. The price that we are passing in the function needs to be converted to meet the same format as the CELO token, thus the `ethers.utils.parseUnits` functionality comes in handy. Next, we need to wait for the transaction to be finished before proceeding.
 
@@ -1143,7 +1168,8 @@ First we will be calling the `createGroupBuy` function from the smart contract. 
   }
 ```
 
-#### 5. `setActiveGroupBuy` function
+#### 5. `setActiveGroupBuy` function:
+
 The setActiveGroupBuy function is triggered when the user clicks on a specific group buy to view the details of it. The main purpose of this function is to call the group buy smart contract that the user clicks on. It will retrieve the list of all orders placed by any users and set the data into the React state variable to display the information to the user.
 
 ```js
@@ -1168,7 +1194,8 @@ The setActiveGroupBuy function is triggered when the user clicks on a specific g
   }
 ```
 
-#### 6. `productOrder` function
+#### 6. `productOrder` function:
+
 Now let’s move on to the `productOrder` function. We will call the `placeOrder` function in the group buy smart contract. The `placeOrder` function in the smart contract does not take in any parameters. As usual, we will need to wait for the transaction to be completed.
 
 ```js
@@ -1199,7 +1226,8 @@ Now let’s move on to the `productOrder` function. We will call the `placeOrder
   }
 ```
 
-#### 7. `withdraw` function
+#### 7. `withdraw` function:
+
 Lastly, we have the `withdraw` function. The function can only be triggered by the seller and only when the group buy duration has ended. As the withdraw function does not take in any parameter we can simply call it. Next, we wait for the transaction to be completed.
 
 ```js
@@ -1704,7 +1732,8 @@ To test your project, you'll need two accounts created on metamask. To do this, 
 
 After testing your dapp and checking that everything behaves correctly, upload your project to a new GitHub repository as this will be needed to deploy our dapp using vercel
 
-## Deploying to Vercel
+## Deploying to Vercel:
+
 To deploy our dapp we will be using vercel. Vercel is the platform for frontend developers, providing the speed and reliability innovators need to create at the moment of inspiration. To get started;
 
 1. Go to [Vercel](https://vercel.com/), click on the sign up button, fill select the appropriate options displayed and continue the sign up with your GitHub.
@@ -1716,6 +1745,9 @@ To deploy our dapp we will be using vercel. Vercel is the platform for frontend 
 
 Now you can see your deployed website by going to your dashboard, selecting your project, and copying the URL beneath domains!
 
+## Conclusion:
 
-## Conclusion
-That’s it! Congratulations! You are done with the tutorial, in this tutorial have built a dapp using react, hardhat, solidity and the Celo blockchain, pushed your code to Github, and deployed it to Vercel! 🎉
+Therefore, Group Buy Smart contracts on the Celo blockchain offer a promising solution to the challenges of traditional group buying methods. By leveraging the transparency and security of blockchain technology, these contracts can facilitate trust and efficiency among participants, while also minimizing the need for intermediaries. Moreover, the Celo blockchain's focus on accessibility and inclusivity makes it well-suited for group buying applications that aim to reach a diverse range of users.
+
+Congratulations!
+You are done with the tutorial, in this tutorial have built a dapp using react, hardhat, solidity and the Celo blockchain, pushed your code to Github, and deployed it to Vercel! 🎉
